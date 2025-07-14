@@ -1,156 +1,75 @@
-# Gemini CLI
+# Open Gemini CLI
 
-[![Gemini CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
+Open Gemini CLI is a fork of the Google Gemini CLI that empowers you with the freedom to connect and use any OpenAI-compatible API as your Agent reasoning engine.
+We believe that a powerful Agent tool should not be locked into a single ecosystem. By opening up backend choices, we hope to inspire more innovation, protect user privacy, and foster a more open and collaborative AI Agent ecosystem.
 
-![Gemini CLI Screenshot](./docs/assets/gemini-screenshot.png)
+## 💡 Why Choose Open Gemini CLI?
 
-This repository contains the Gemini CLI, a command-line AI workflow tool that connects to your
-tools, understands your code and accelerates your workflows.
+With Open Gemini CLI, you can:
 
-With the Gemini CLI you can:
+- **Freedom to choose MaaS providers**: No longer limited to a single cloud vendor, you can run your Agent on any platform that provides OpenAI-compatible APIs (such as Azure, Groq, Together AI, and numerous open-source model frameworks).
+- **Use locally hosted models for privacy protection**: By connecting to locally running LLMs (such as through Ollama, vLLM, LlamaEdge, etc.), you can ensure that code and data remain completely on your device, achieving the highest level of privacy and security.
+- **Mix multiple models to balance cost and efficiency**: You can configure different model providers for different tasks (such as general reasoning, code generation, visual understanding), achieving the optimal combination of cost and performance.
+- **Evaluate and compare models in Agentic tasks**: In the same complex workflows, easily switch and compare the performance of different models (such as GPT-4o, Llama3, Mixtral, Qwen2) to find the "brain" that best suits your tasks.
 
-- Query and edit large codebases in and beyond Gemini's 1M token context window.
-- Generate new apps from PDFs or sketches, using Gemini's multimodal capabilities.
-- Automate operational tasks, like querying pull requests or handling complex rebases.
-- Use tools and MCP servers to connect new capabilities, including [media generation with Imagen,
-  Veo or Lyria](https://github.com/GoogleCloudPlatform/vertex-ai-creative-studio/tree/main/experiments/mcp-genmedia)
-- Ground your queries with the [Google Search](https://ai.google.dev/gemini-api/docs/grounding)
-  tool, built in to Gemini.
+## 🚀 Quick Start
 
-## Quickstart
+1. **Install prerequisites**: Ensure you have Node.js version 20 or higher installed.
+2. **Run directly via npx (recommended)**: `npx https://github.com/YOUR_GITHUB_USERNAME/open-gemini-cli`
+3. **Or install globally**: `npm install -g @your-npm-scope/open-gemini-cli`
+4. **Configuration**: On first run, the CLI will guide you through interactive configuration. When asked about authentication method, select the newly added "Use an OpenAI Compatible API" option.
 
-1. **Prerequisites:** Ensure you have [Node.js version 20](https://nodejs.org/en/download) or higher installed.
-2. **Run the CLI:** Execute the following command in your terminal:
+You can also configure quickly through environment variables:
 
-   ```bash
-   npx https://github.com/google-gemini/gemini-cli
-   ```
+### Global Configuration (Recommended)
 
-   Or install it with:
+This is the simplest way, directing all requests to the same OpenAI-compatible endpoint.
 
-   ```bash
-   npm install -g @google/gemini-cli
-   gemini
-   ```
-
-3. **Pick a color theme**
-4. **Authenticate:** When prompted, sign in with your personal Google account. This will grant you up to 60 model requests per minute and 1,000 model requests per day using Gemini.
-
-You are now ready to use the Gemini CLI!
-
-### Use a Gemini API key:
-
-The Gemini API provides a free tier with [100 requests per day](https://ai.google.dev/gemini-api/docs/rate-limits#free-tier) using Gemini 2.5 Pro, control over which model you use, and access to higher rate limits (with a paid plan):
-
-1. Generate a key from [Google AI Studio](https://aistudio.google.com/apikey).
-2. Set it as an environment variable in your terminal. Replace `YOUR_API_KEY` with your generated key.
-
-   ```bash
-   export GEMINI_API_KEY="YOUR_API_KEY"
-   ```
-
-3. (Optionally) Upgrade your Gemini API project to a paid plan on the API key page (will automatically unlock [Tier 1 rate limits](https://ai.google.dev/gemini-api/docs/rate-limits#tier-1))
-
-### Use a Vertex AI API key:
-
-The Vertex AI API provides a [free tier](https://cloud.google.com/vertex-ai/generative-ai/docs/start/express-mode/overview) using express mode for Gemini 2.5 Pro, control over which model you use, and access to higher rate limits with a billing account:
-
-1. Generate a key from [Google Cloud](https://cloud.google.com/vertex-ai/generative-ai/docs/start/api-keys).
-2. Set it as an environment variable in your terminal. Replace `YOUR_API_KEY` with your generated key and set GOOGLE_GENAI_USE_VERTEXAI to true
-
-   ```bash
-   export GOOGLE_API_KEY="YOUR_API_KEY"
-   export GOOGLE_GENAI_USE_VERTEXAI=true
-   ```
-
-3. (Optionally) Add a billing account on your project to get access to [higher usage limits](https://cloud.google.com/vertex-ai/generative-ai/docs/quotas)
-
-For other authentication methods, including Google Workspace accounts, see the [authentication](./docs/cli/authentication.md) guide.
-
-## Examples
-
-Once the CLI is running, you can start interacting with Gemini from your shell.
-
-You can start a project from a new directory:
-
-```sh
-cd new-project/
-gemini
-> Write me a Gemini Discord bot that answers questions using a FAQ.md file I will provide
+```bash
+# Your API key (required)
+export OPENAI_API_KEY="sk-..."
+# Your API endpoint address (required, e.g., https://api.openai.com/v1)
+export OPENAI_API_BASE="YOUR_API_BASE_URL"
+# The model name you want to use (optional, defaults to gpt-4o)
+export OPENAI_MODEL="llama3"
 ```
 
-Or work with an existing project:
+### Fine-grained Configuration (Advanced)
 
-```sh
-git clone https://github.com/google-gemini/gemini-cli
-cd gemini-cli
-gemini
-> Give me a summary of all of the changes that went in yesterday
+You can specify different model providers for different types of tasks to achieve ultimate optimization of cost and performance.
+
+```bash
+# Main LLM reasoning using a powerful model
+export OPENAI_LLM_KEY="sk-..."
+export OPENAI_LLM_BASE="https://api.groq.com/openai/v1"
+export OPENAI_LLM_MODEL="grok-3"
+
+# Vision understanding (VLM) using another model
+export OPENAI_VLM_KEY="sk-..."
+export OPENAI_VLM_BASE="https://api.openai.com/v1"
+export OPENAI_VLM_MODEL="gpt-4o"
+
+# Fast, cheap tasks (like conversation history compression) using Flash models
+export OPENAI_FLASH_KEY="sk-..."
+export OPENAI_FLASH_BASE="https://api.together.xyz/v1"
+export OPENAI_FLASH_MODEL="mistralai/Mixtral-8x7B-Instruct-v0.1"
 ```
 
-### Next steps
+## 🛠️ Implementation Approach
 
-- Learn how to [contribute to or build from the source](./CONTRIBUTING.md).
-- Explore the available **[CLI Commands](./docs/cli/commands.md)**.
-- If you encounter any issues, review the **[Troubleshooting guide](./docs/troubleshooting.md)**.
-- For more comprehensive documentation, see the [full documentation](./docs/index.md).
-- Take a look at some [popular tasks](#popular-tasks) for more inspiration.
+For transparency, we briefly explain the compatibility layer implementation approach of open-gemini-cli:
 
-### Troubleshooting
+We introduce an adapter layer (API Adaptor) that acts as a "translator" between the core Agent logic and the underlying model APIs.
 
-Head over to the [troubleshooting](docs/troubleshooting.md) guide if you're
-having issues.
+- **Request transformation**: When you issue instructions, the APIAdaptor converts Gemini's internal message and tool call format (Content[]) to OpenAI-compatible messages array format.
+- **Response transformation**: When OpenAI-compatible APIs return data in streaming (delta) format, the APIAdaptor reassembles these incremental data chunks into structurally complete GenerateContentResponse events expected by the upper-level gemini-cli logic.
 
-## Popular tasks
+This design ensures that gemini-cli's powerful Agent scheduling, tool execution, and multi-turn interaction logic can remain unchanged while seamlessly running on different reasoning backends.
 
-### Explore a new codebase
+## 🔮 Future Plans
 
-Start by `cd`ing into an existing or newly-cloned repository and running `gemini`.
+We are actively enhancing file processing tools (read_file, read_many_files). Since many OpenAI-compatible models do not have native, integrated multimodal capabilities like Gemini, we will introduce a file parsing and understanding layer. This will allow the CLI to automatically convert image, PDF, and other file content into high-quality text descriptions before submitting to the core LLM, thus achieving powerful multimodal file interaction capabilities on any model.
 
-```text
-> Describe the main pieces of this system's architecture.
-```
+## ❤️ Welcome Contributions
 
-```text
-> What security mechanisms are in place?
-```
-
-### Work with your existing code
-
-```text
-> Implement a first draft for GitHub issue #123.
-```
-
-```text
-> Help me migrate this codebase to the latest version of Java. Start with a plan.
-```
-
-### Automate your workflows
-
-Use MCP servers to integrate your local system tools with your enterprise collaboration suite.
-
-```text
-> Make me a slide deck showing the git history from the last 7 days, grouped by feature and team member.
-```
-
-```text
-> Make a full-screen web app for a wall display to show our most interacted-with GitHub issues.
-```
-
-### Interact with your system
-
-```text
-> Convert all the images in this directory to png, and rename them to use dates from the exif data.
-```
-
-```text
-> Organize my PDF invoices by month of expenditure.
-```
-
-### Uninstall
-
-Head over to the [Uninstall](docs/Uninstall.md) guide for uninstallation instructions.
-
-## Terms of Service and Privacy Notice
-
-For details on the terms of service and privacy notice applicable to your use of Gemini CLI, see the [Terms of Service and Privacy Notice](./docs/tos-privacy.md).
+open-gemini-cli is a community-driven project. We welcome contributions of any form, whether it's submitting bug reports, proposing feature suggestions, or directly contributing code. If you share the vision of this project, please join us in building a more open, free, and powerful AI Agent tool together!
