@@ -521,8 +521,16 @@ export class GeminiChat {
 
     try {
       for await (const chunk of streamResponse) {
+        // ======================= 关键修改 START =======================
+				// 将所有收到的数据块都添加到 `chunks` 数组中。
+				// 原始代码只添加 `isValidResponse` 返回 true 的数据块，
+				// 这导致了包含用量统计但文本内容为空的最后一个数据块被忽略。
+				// 通过无条件添加所有块，我们可以确保在流结束后能从 `chunks` 数组中
+				// 找到并记录用量信息。
+				chunks.push(chunk);
+				// ======================= 关键修改 END =========================
         if (isValidResponse(chunk)) {
-          chunks.push(chunk);
+          // 原始代码中的 `chunks.push(chunk);` 已被移到循环顶部，此处不再需要。
           const content = chunk.candidates?.[0]?.content;
           if (content !== undefined) {
             if (this.isThoughtContent(content)) {
