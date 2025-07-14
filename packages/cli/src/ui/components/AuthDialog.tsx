@@ -77,6 +77,10 @@ export function AuthDialog({
       value: AuthType.USE_GEMINI,
     },
     { label: 'Vertex AI', value: AuthType.USE_VERTEX_AI },
+    {
+      label: 'Use an OpenAI Compatible API',
+      value: AuthType.OPENAI_COMPATIBLE,
+    },
   ];
 
   const initialAuthIndex = items.findIndex((item) => {

@@ -29,7 +29,7 @@ This is the simplest way, directing all requests to the same OpenAI-compatible e
 # Your API key (required)
 export OPENAI_API_KEY="sk-..."
 # Your API endpoint address (required, e.g., https://api.openai.com/v1)
-export OPENAI_API_BASE="YOUR_API_BASE_URL"
+export OPENAI_BASE_URL="YOUR_BASE_URL"
 # The model name you want to use (optional, defaults to gpt-4o)
 export OPENAI_MODEL="llama3"
 ```

@@ -11,13 +11,14 @@ import {
   CountTokensParameters,
   EmbedContentResponse,
   EmbedContentParameters,
-  GoogleGenAI,
 } from '@google/genai';
 import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { Config } from '../config/config.js';
 import { getEffectiveModel } from './modelCheck.js';
 import { UserTierId } from '../code_assist/types.js';
+import { createGeminiContentGenerator } from './geminiContentGenerator.js';
+import { OpenAIContentGenerator } from './openaiContentGenerator.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -43,6 +44,7 @@ export enum AuthType {
   USE_GEMINI = 'gemini-api-key',
   USE_VERTEX_AI = 'vertex-ai',
   CLOUD_SHELL = 'cloud-shell',
+  OPENAI_COMPATIBLE = 'openai-compatible',
 }
 
 export type ContentGeneratorConfig = {
@@ -98,6 +100,13 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  if (authType === AuthType.OPENAI_COMPATIBLE) {
+    contentGeneratorConfig.apiKey = process.env.OPENAI_API_KEY;
+    contentGeneratorConfig.model =
+      process.env.OPENAI_MODEL || contentGeneratorConfig.model;
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -106,16 +115,16 @@ export async function createContentGenerator(
   gcConfig: Config,
   sessionId?: string,
 ): Promise<ContentGenerator> {
-  const version = process.env.CLI_VERSION || process.version;
-  const httpOptions = {
-    headers: {
-      'User-Agent': `GeminiCLI/${version} (${process.platform}; ${process.arch})`,
-    },
-  };
   if (
     config.authType === AuthType.LOGIN_WITH_GOOGLE ||
     config.authType === AuthType.CLOUD_SHELL
   ) {
+    const version = process.env.CLI_VERSION || process.version;
+    const httpOptions = {
+      headers: {
+        'User-Agent': `GeminiCLI/${version} (${process.platform}; ${process.arch})`,
+      },
+    };
     return createCodeAssistContentGenerator(
       httpOptions,
       config.authType,
@@ -128,13 +137,11 @@ export async function createContentGenerator(
     config.authType === AuthType.USE_GEMINI ||
     config.authType === AuthType.USE_VERTEX_AI
   ) {
-    const googleGenAI = new GoogleGenAI({
-      apiKey: config.apiKey === '' ? undefined : config.apiKey,
-      vertexai: config.vertexai,
-      httpOptions,
-    });
+    return createGeminiContentGenerator(config);
+  }
 
-    return googleGenAI.models;
+  if (config.authType === AuthType.OPENAI_COMPATIBLE) {
+    return new OpenAIContentGenerator(config);
   }
 
   throw new Error(

@@ -1,0 +1,20 @@
+   1. 明确第一阶段改造计划
+       * 我们根据既定目标，创建了详细的第一阶段改造方案，并将其作为 README.md 文件存放在
+         dev_notes/02_Implementation/01_StreamingChatBot/ 目录下，为后续开发提供了清晰的指引。
+
+   2. 完成认证集成 (Auth Integration)
+       * 扩展认证：我们成功地在系统中集成了新的认证方式 OPENAI_COMPATIBLE。
+       * 修改UI：更新了认证对话框，用户现在可以选择 "Use an OpenAI Compatible API" 选项。
+       * 实现验证：添加了新的验证逻辑，当用户选择新选项时，系统会检查 OPENAI_API_KEY 和 OPENAI_BASE_URL
+         两个关键环境变量是否已设置。
+       * 单元测试：编写并成功通过了单元测试，确保了认证逻辑的正确性和健壮性。
+
+   3. 重构内容生成器 (ContentGenerator)
+       * 逻辑解耦：我们将原先与 Gemini API 紧密耦合的代码逻辑成功剥离，封装到了独立的 geminiContentGenerator.ts
+         文件中。
+       * 创建适配器桩：我们创建了 openaiContentGenerator.ts 文件，并实现了一个带有预设返回值的
+         OpenAIContentGenerator 类。此类已准备好接收配置并为后续实现与 OpenAI API 的真实交互打下基础。
+       * 工厂模式改造：我们将核心的 contentGenerator.ts 文件重构为一个工厂。现在，createContentGenerator
+         函数能够根据用户的认证选择，智能地返回相应的 ContentGenerator 实例（Gemini 或 OpenAI）。
+       * 配置注入：我们扩展了 createContentGeneratorConfig 方法，使其能够正确读取 OpenAI
+         相关的环境变量，并将这些配置成功注入到 OpenAIContentGenerator 实例中。

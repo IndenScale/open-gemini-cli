@@ -22,7 +22,7 @@ Open Gemini CLI，一个 Google Gemini CLI 的分叉版本，旨在赋予您连�
 ```bash
 export OPENAI_API_KEY="sk-..."
 # 您的 API 端点地址 (必需, 例如 https://api.openai.com/v1)
-export OPENAI_API_BASE="YOUR_API_BASE_URL"
+export OPENAI_BASE_URL="YOUR_BASE_URL"
 # 您希望使用的模型名称 (可选, 默认为 gpt-4o)
 export OPENAI_MODEL="llama3"
 ```
