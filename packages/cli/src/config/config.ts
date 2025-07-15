@@ -17,6 +17,9 @@ import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   FileDiscoveryService,
   TelemetryTarget,
+  MCPServerConfig,
+  IDE_SERVER_NAME,
+
 } from '@indenscale/open-gemini-cli-core';
 import { Settings } from './settings.js';
 

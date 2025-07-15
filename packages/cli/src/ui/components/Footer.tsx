@@ -7,7 +7,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
-import { shortenPath, tildeifyPath, tokenLimit } from '@indenscale/open-gemini-cli-core';
+import { shortenPath, tildeifyPath, tokenLimit, ideContext,
+  ActiveFile} from '@indenscale/open-gemini-cli-core';
 import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
 import Gradient from 'ink-gradient';
