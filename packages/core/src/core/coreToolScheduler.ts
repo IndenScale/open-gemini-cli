@@ -656,17 +656,27 @@ export class CoreToolScheduler {
               return;
             }
 
+            console.log(`[DEBUG] Tool execution completed for ${toolName} (${callId}):`, {
+              toolResult: toolResult.llmContent,
+              returnDisplay: toolResult.returnDisplay
+            });
+
             const response = convertToFunctionResponse(
               toolName,
               callId,
               toolResult.llmContent,
             );
+
+            console.log(`[DEBUG] Function response created for ${toolName} (${callId}):`, response);
+
             const successResponse: ToolCallResponseInfo = {
               callId,
               responseParts: response,
               resultDisplay: toolResult.returnDisplay,
               error: undefined,
             };
+
+            // console.log(`[DEBUG] Success response for ${toolName} (${callId}):`, successResponse);
 
             this.setStatusInternal(callId, 'success', successResponse);
           })

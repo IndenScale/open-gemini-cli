@@ -209,7 +209,17 @@ export class Turn {
         }
 
         // Handle function calls (requesting tool execution)
+        // console.log('[DEBUG] Turn processing response:', {
+        //   hasFunctionCalls: !!resp.functionCalls,
+        //   functionCallsLength: resp.functionCalls?.length || 0,
+        //   candidates: resp.candidates?.length || 0,
+        //   parts: resp.candidates?.[0]?.content?.parts?.length || 0,
+        //   partsContent: resp.candidates?.[0]?.content?.parts?.map(p => Object.keys(p))
+        // });
+
         const functionCalls = resp.functionCalls ?? [];
+        //console.log('[DEBUG] Function calls found:', functionCalls);
+
         for (const fnCall of functionCalls) {
           const event = this.handlePendingFunctionCall(fnCall);
           if (event) {
@@ -254,6 +264,12 @@ export class Turn {
   private handlePendingFunctionCall(
     fnCall: FunctionCall,
   ): ServerGeminiStreamEvent | null {
+    console.log('[DEBUG] handlePendingFunctionCall called with:', {
+      id: fnCall.id,
+      name: fnCall.name,
+      args: fnCall.args
+    });
+
     const callId =
       fnCall.id ??
       `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -268,8 +284,11 @@ export class Turn {
       prompt_id: this.prompt_id,
     };
 
+    // console.log('[DEBUG] Created toolCallRequest:', toolCallRequest);
+
     this.pendingToolCalls.push(toolCallRequest);
 
+    // console.log('[DEBUG] Yielding ToolCallRequest event');
     // Yield a request for the tool call, not the pending/confirming status
     return { type: GeminiEventType.ToolCallRequest, value: toolCallRequest };
   }
