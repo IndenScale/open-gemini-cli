@@ -179,7 +179,14 @@ export class Turn {
           // Do not add resp to debugResponses if aborted before processing
           return;
         }
+        
+        // 始终将响应添加到debugResponses中，包括只包含usage信息的chunk
         this.debugResponses.push(resp);
+        
+        // 添加调试信息来跟踪usage信息
+        if (resp.usageMetadata) {
+          console.log('[Turn Debug] Received response with usage metadata:', resp.usageMetadata);
+        }
 
         const thoughtPart = resp.candidates?.[0]?.content?.parts?.[0];
         if (thoughtPart?.thought) {

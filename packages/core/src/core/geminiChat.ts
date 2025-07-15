@@ -517,6 +517,7 @@ export class GeminiChat {
   ) {
     const outputContent: Content[] = [];
     const chunks: GenerateContentResponse[] = [];
+    let finalUsageMetadata: GenerateContentResponseUsageMetadata | undefined; // 新增变量直接捕获用量信息
     let errorOccurred = false;
 
     try {
@@ -529,6 +530,14 @@ export class GeminiChat {
 				// 找到并记录用量信息。
 				chunks.push(chunk);
 				// ======================= 关键修改 END =========================
+
+        // 新增逻辑：直接捕获用量信息
+        // 如果当前块包含用量信息，就立即保存下来
+        // 这比在最后搜索数组更可靠
+        if (chunk.usageMetadata) {
+          finalUsageMetadata = chunk.usageMetadata;
+          console.log('[Usage Debug] Captured usage metadata directly:', finalUsageMetadata);
+        }
         if (isValidResponse(chunk)) {
           // 原始代码中的 `chunks.push(chunk);` 已被移到循环顶部，此处不再需要。
           const content = chunk.candidates?.[0]?.content;
@@ -561,7 +570,7 @@ export class GeminiChat {
       await this._logApiResponse(
         durationMs,
         prompt_id,
-        this.getFinalUsageMetadata(chunks),
+        finalUsageMetadata,
         fullText,
       );
     }

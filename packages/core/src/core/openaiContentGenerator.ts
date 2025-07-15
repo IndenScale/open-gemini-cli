@@ -248,9 +248,27 @@ export class OpenAIContentGenerator implements ContentGenerator {
     ): AsyncGenerator<GenerateContentResponse> {
         // 维护工具调用的累积状态
         const accumulatedToolCalls: Record<string, { id: string; name: string; arguments: string }> = {};
-        
+        // 累积usage信息，只在最后一个chunk中提供
+        let finalUsage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | undefined;
+
         for await (const chunk of stream) {
-            const geminiResponse = OpenAIToGeminiConverter.convertStreamingChunkToGemini(chunk, isJsonResponse, accumulatedToolCalls);
+            // 使用 `as any` 类型断言来处理非标准的 `usage` 字段位置
+            const usage = chunk.usage || (chunk.choices?.[0] as any)?.usage;
+            // --- 修改结束 ---
+
+            if (usage) {
+                finalUsage = usage as any;
+                console.log('[Usage Debug] Received usage info in chunk:', finalUsage);
+            }
+
+            // 对于包含usage信息的chunk，即使没有其他内容也要处理
+            // 传递当前chunk的usage信息（如果有的话）
+            const geminiResponse = OpenAIToGeminiConverter.convertStreamingChunkToGemini(
+                chunk,
+                isJsonResponse,
+                accumulatedToolCalls,
+                chunk.usage ?? undefined // 如果chunk.usage为null，则传递undefined
+            );
             if (geminiResponse) {
                 yield geminiResponse;
             }

@@ -402,18 +402,24 @@ export class OpenAIToGeminiConverter {
     static convertStreamingChunkToGemini(
         chunk: OpenAI.Chat.Completions.ChatCompletionChunk,
         isJsonResponse: boolean = false,
-        accumulatedToolCalls: Record<string, { id: string; name: string; arguments: string }> = {}
+        accumulatedToolCalls: Record<string, { id: string; name: string; arguments: string }> = {},
+        finalUsage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number }
     ): GenerateContentResponse | null {
+        if (finalUsage !== undefined) {
+            console.log('[Adapter Debug] Processing chunk with finalUsage:', finalUsage);
+        }
+
         if (!chunk.choices || chunk.choices.length === 0) {
             return null;
         }
 
         const choice = chunk.choices[0];
-        if (!choice.delta) {
-            return null;
-        }
 
-        const delta = choice.delta;
+        // --- 修改开始 ---
+        // 如果 choice.delta 不存在，则视为空对象，而不是直接返回 null
+        // 这样可以继续处理 finish_reason 和 finalUsage
+        const delta = choice.delta || {};
+        // --- 修改结束 ---
         const parts: Part[] = [];
         let functionCalls: FunctionCall[] | undefined = undefined;
 
@@ -501,9 +507,10 @@ export class OpenAIToGeminiConverter {
             }
         }
 
-        if (parts.length === 0 && !choice.finish_reason) {
-            return null;
-        }
+        // 如果没有内容、没有完成原因，且没有usage信息，则返回null
+        // if (parts.length === 0 && !choice.finish_reason && !finalUsage) {
+        //     return null;
+        // }
 
         // 映射完成原因
         const finishReasonMapping: Record<string, FinishReason> = {
@@ -513,7 +520,7 @@ export class OpenAIToGeminiConverter {
             tool_calls: FinishReason.STOP,
         };
 
-        return {
+        const geminiResponse: GenerateContentResponse = {
             candidates: [
                 {
                     content: { parts, role: 'model' },
@@ -530,5 +537,17 @@ export class OpenAIToGeminiConverter {
             executableCode: undefined,
             codeExecutionResult: undefined,
         };
+
+        // 添加usage信息（如果可用）
+        if (finalUsage) {
+            geminiResponse.usageMetadata = {
+                promptTokenCount: finalUsage.prompt_tokens,
+                candidatesTokenCount: finalUsage.completion_tokens,
+                totalTokenCount: finalUsage.total_tokens,
+            };
+            console.log('[Usage Debug] Added usage metadata to response:', geminiResponse.usageMetadata);
+        }
+
+        return geminiResponse;
     }
 }
