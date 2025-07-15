@@ -65,7 +65,7 @@ import {
   getMCPDiscoveryState,
   getMCPServerStatus,
   GeminiClient,
-} from '@google/gemini-cli-core';
+} from '@indenscale/open-gemini-cli-core';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { LoadedSettings } from '../../config/settings.js';
 import * as ShowMemoryCommandModule from './useShowMemoryCommand.js';
@@ -88,9 +88,9 @@ vi.mock('open', () => ({
   default: vi.fn(),
 }));
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@indenscale/open-gemini-cli-core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@indenscale/open-gemini-cli-core')>();
   return {
     ...actual,
     getMCPServerStatus: vi.fn(),

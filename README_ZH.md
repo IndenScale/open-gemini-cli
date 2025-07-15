@@ -15,26 +15,24 @@ Open Gemini CLI，一个 Google Gemini CLI 的分叉版本，旨在赋予您连�
 ## 🚀 快速启动
 
 1. 安装先决条件: 确保您已安装 Node.js version 20 或更高版本。
-2. 通过 npx 直接运行（推荐）： `npx https://github.com/YOUR_GITHUB_USERNAME/open-gemini-cli`
-3. 或者，全局安装：npm install -g @your-npm-scope/open-gemini-cli
+2. 通过 npx 直接运行（推荐）： `npx https://github.com/IndenScale/open-gemini-cli`
+3. 或者，全局安装：`npm install -g @indenscale/open-gemini-cli`
 4. 配置首次运行时，CLI 会引导您进行交互式配置。当询问认证方式时，选择新增的 Use an OpenAI Compatible API 选项。您也可以通过环境变量进行快速配置：全局配置 (推荐)这是最简单的方式，将所有请求都指向同一个 OpenAI 兼容的端点。# 您的 API 密钥 (必需)
 
 ```bash
-export OPENAI_API_KEY="sk-..."
-# 您的 API 端点地址 (必需, 例如 https://api.openai.com/v1)
-export OPENAI_BASE_URL="YOUR_BASE_URL"
-# 您希望使用的模型名称 (可选, 默认为 gpt-4o)
-export OPENAI_MODEL="llama3"
+export OPENAI_LLM_KEY="your-moonshot-api-key"
+export OPENAI_LLM_BASE="https://api.moonshot.cn/v1"
+export OPENAI_LLM_MODEL="kimi-k2-0711-preview"
 ```
 
-## 精细化配置 (高级)
+## 精细化配置 (高级)尚未实现
 
 您可以为不同类型的任务指定不同的模型供应商，以实现成本和性能的极致优化。# 主要的 LLM 推理使用一个强大的模型
 
 ```bash
-export OPENAI_LLM_KEY="sk-..."
-export OPENAI_LLM_BASE="https://api.groq.com/openai/v1"
-export OPENAI_LLM_MODEL="grok-3"
+export OPENAI_LLM_KEY="your-moonshot-api-key"
+export OPENAI_LLM_BASE="https://api.moonshot.cn/v1"
+export OPENAI_LLM_MODEL="kimi-k2-0711-preview"
 
 # 视觉理解 (VLM) 使用另一个模型
 export OPENAI_VLM_KEY="sk-..."

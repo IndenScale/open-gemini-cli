@@ -7,14 +7,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { runNonInteractive } from './nonInteractiveCli.js';
-import { Config, GeminiClient, ToolRegistry } from '@google/gemini-cli-core';
+import { Config, GeminiClient, ToolRegistry } from '@indenscale/open-gemini-cli-core';
 import { GenerateContentResponse, Part, FunctionCall } from '@google/genai';
 
 // Mock dependencies
-vi.mock('@google/gemini-cli-core', async () => {
+vi.mock('@indenscale/open-gemini-cli-core', async () => {
   const actualCore = await vi.importActual<
-    typeof import('@google/gemini-cli-core')
-  >('@google/gemini-cli-core');
+    typeof import('@indenscale/open-gemini-cli-core')
+  >('@indenscale/open-gemini-cli-core');
   return {
     ...actualCore,
     GeminiClient: vi.fn(),
@@ -114,7 +114,7 @@ describe('runNonInteractive', () => {
     };
 
     const { executeToolCall: mockCoreExecuteToolCall } = await import(
-      '@google/gemini-cli-core'
+      '@indenscale/open-gemini-cli-core'
     );
     vi.mocked(mockCoreExecuteToolCall).mockResolvedValue({
       callId: 'fc1',
@@ -168,7 +168,7 @@ describe('runNonInteractive', () => {
     };
 
     const { executeToolCall: mockCoreExecuteToolCall } = await import(
-      '@google/gemini-cli-core'
+      '@indenscale/open-gemini-cli-core'
     );
     vi.mocked(mockCoreExecuteToolCall).mockResolvedValue({
       callId: 'fcError',
@@ -241,7 +241,7 @@ describe('runNonInteractive', () => {
     };
 
     const { executeToolCall: mockCoreExecuteToolCall } = await import(
-      '@google/gemini-cli-core'
+      '@indenscale/open-gemini-cli-core'
     );
     vi.mocked(mockCoreExecuteToolCall).mockResolvedValue({
       callId: 'fcNotFound',
@@ -314,7 +314,7 @@ describe('runNonInteractive', () => {
     vi.mocked(mockConfig.getMaxSessionTurns).mockReturnValue(1);
 
     const { executeToolCall: mockCoreExecuteToolCall } = await import(
-      '@google/gemini-cli-core'
+      '@indenscale/open-gemini-cli-core'
     );
     vi.mocked(mockCoreExecuteToolCall).mockResolvedValue({
       callId: 'fcLoop',

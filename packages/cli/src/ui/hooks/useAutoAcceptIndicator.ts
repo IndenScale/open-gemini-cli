@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useInput } from 'ink';
-import { ApprovalMode, type Config } from '@google/gemini-cli-core';
+import { ApprovalMode, type Config } from '@indenscale/open-gemini-cli-core';
 
 export interface UseAutoAcceptIndicatorArgs {
   config: Config;

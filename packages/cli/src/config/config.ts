@@ -17,7 +17,7 @@ import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   FileDiscoveryService,
   TelemetryTarget,
-} from '@google/gemini-cli-core';
+} from '@indenscale/open-gemini-cli-core';
 import { Settings } from './settings.js';
 
 import { Extension, filterActiveExtensions } from './extension.js';

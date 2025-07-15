@@ -1,6 +1,6 @@
 {
-  "name": "@google/gemini-cli",
-  "version": "0.1.12",
+  "name": "@indenscale/open-gemini-cli",
+  "version": "0.1.0",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -8,13 +8,15 @@
   "workspaces": [
     "packages/*"
   ],
-  "private": "true",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/google-gemini/gemini-cli.git"
+    "url": "git+https://github.com/IndenScale/open-gemini-cli.git"
   },
   "config": {
-    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.1.12"
+    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "start": "node scripts/start.js",
@@ -23,7 +25,7 @@
     "auth:docker": "gcloud auth configure-docker us-west1-docker.pkg.dev",
     "auth": "npm run auth:npm && npm run auth:docker",
     "generate": "node scripts/generate-git-commit-info.js",
-    "build": "node scripts/build.js",
+    "build": "npm run build --workspace=packages/core && npm run build --workspace=packages/cli",
     "build:all": "npm run build && npm run build:sandbox",
     "build:packages": "npm run build --workspaces",
     "build:sandbox": "node scripts/build_sandbox.js --skip-npm-install-build",
