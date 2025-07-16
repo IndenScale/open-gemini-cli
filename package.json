@@ -86,5 +86,8 @@
     "typescript-eslint": "^8.30.1",
     "vitest": "^3.2.4",
     "yargs": "^18.0.0"
+  },
+  "dependencies": {
+    "@indenscale/open-gemini-cli": "^0.1.3"
   }
 }
