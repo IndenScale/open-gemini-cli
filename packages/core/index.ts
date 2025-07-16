@@ -5,6 +5,12 @@
  */
 
 export * from './src/index.js';
+export * from './src/services/fileParserService.js';
+export { 
+  CompositeVLMService, 
+  OpenAIVLMService, 
+  GeminiVLMService 
+} from './src/services/vlmService.js';
 export {
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,

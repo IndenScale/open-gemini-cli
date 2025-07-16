@@ -94,11 +94,11 @@ export function isBinaryFile(filePath: string): boolean {
 /**
  * Detects the type of file based on extension and content.
  * @param filePath Path to the file.
- * @returns 'text', 'image', 'pdf', 'audio', 'video', or 'binary'.
+ * @returns 'text', 'image', 'pdf', 'audio', 'video', 'office', or 'binary'.
  */
 export function detectFileType(
   filePath: string,
-): 'text' | 'image' | 'pdf' | 'audio' | 'video' | 'binary' | 'svg' {
+): 'text' | 'image' | 'pdf' | 'audio' | 'video' | 'office' | 'binary' | 'svg' {
   const ext = path.extname(filePath).toLowerCase();
 
   // The mimetype for "ts" is MPEG transport stream (a video format) but we want
@@ -109,6 +109,11 @@ export function detectFileType(
 
   if (ext === '.svg') {
     return 'svg';
+  }
+
+  // Check for Office files first before general binary check
+  if (['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'].includes(ext)) {
+    return 'office';
   }
 
   const lookedUpMimeType = mime.lookup(filePath); // Returns false if not found, or the mime type string
@@ -129,6 +134,7 @@ export function detectFileType(
 
   // Stricter binary check for common non-text extensions before content check
   // These are often not well-covered by mime-types or might be misidentified.
+  // Note: Office files (.doc, .docx, .xls, .xlsx, .ppt, .pptx) are handled separately as 'office' type
   if (
     [
       '.zip',
@@ -141,12 +147,6 @@ export function detectFileType(
       '.jar',
       '.war',
       '.7z',
-      '.doc',
-      '.docx',
-      '.xls',
-      '.xlsx',
-      '.ppt',
-      '.pptx',
       '.odt',
       '.ods',
       '.odp',
@@ -183,11 +183,12 @@ export interface ProcessedFileReadResult {
 }
 
 /**
- * Reads and processes a single file, handling text, images, and PDFs.
+ * Reads and processes a single file, handling text, images, PDFs, and Office files.
  * @param filePath Absolute path to the file.
  * @param rootDirectory Absolute path to the project root for relative path display.
  * @param offset Optional offset for text files (0-based line number).
  * @param limit Optional limit for text files (number of lines to read).
+ * @param fileParserService Optional FileParserService instance for Office file parsing.
  * @returns ProcessedFileReadResult object.
  */
 export async function processSingleFileContent(
@@ -195,6 +196,7 @@ export async function processSingleFileContent(
   rootDirectory: string,
   offset?: number,
   limit?: number,
+  fileParserService?: any,
 ): Promise<ProcessedFileReadResult> {
   try {
     if (!fs.existsSync(filePath)) {
@@ -233,6 +235,29 @@ export async function processSingleFileContent(
       .replace(/\\/g, '/');
 
     switch (fileType) {
+      case 'office': {
+        if (fileParserService) {
+          try {
+            const parsedContent = await fileParserService.parseFileToMarkdown(filePath);
+            return {
+              llmContent: parsedContent,
+              returnDisplay: `Parsed Office file: ${relativePathForDisplay}`,
+            };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+              llmContent: `Error parsing Office file ${relativePathForDisplay}: ${errorMessage}`,
+              returnDisplay: `Error parsing Office file: ${relativePathForDisplay}`,
+              error: `Error parsing Office file ${filePath}: ${errorMessage}`,
+            };
+          }
+        } else {
+          return {
+            llmContent: `Cannot display content of Office file (no parser available): ${relativePathForDisplay}`,
+            returnDisplay: `Skipped Office file (no parser): ${relativePathForDisplay}`,
+          };
+        }
+      }
       case 'binary': {
         return {
           llmContent: `Cannot display content of binary file: ${relativePathForDisplay}`,
@@ -297,7 +322,50 @@ export async function processSingleFileContent(
           linesShown: [actualStartLine + 1, endLine],
         };
       }
-      case 'image':
+      case 'image': {
+        const contentBuffer = await fs.promises.readFile(filePath);
+        
+        // Try to use VLM service for image description if available
+        if (fileParserService && fileParserService.vlmService) {
+          try {
+            console.log(`[FileUtils] Attempting VLM description for image: ${relativePathForDisplay}`);
+            const mimeType = mime.lookup(filePath) || 'application/octet-stream';
+            const description = await fileParserService.vlmService.describeImage(contentBuffer, mimeType);
+            console.log(`[FileUtils] VLM description successful for: ${relativePathForDisplay}`);
+            
+            // Return both the description and the image data
+            return {
+              llmContent: `# ${path.basename(filePath)}\n\n![${path.basename(filePath)}]\n\n## Image Description\n\n${description}`,
+              returnDisplay: `Read and described image: ${relativePathForDisplay}`,
+            };
+          } catch (error) {
+            console.warn(`[FileUtils] VLM description failed for ${relativePathForDisplay}:`, error);
+            // Fall back to base64 encoding with limited length
+            const base64Data = contentBuffer.toString('base64');
+            const MAX_BASE64_DISPLAY_LENGTH = 200;
+            const truncatedBase64 = base64Data.length > MAX_BASE64_DISPLAY_LENGTH 
+              ? base64Data.substring(0, MAX_BASE64_DISPLAY_LENGTH) + '...[truncated]'
+              : base64Data;
+            
+            return {
+              llmContent: `# ${path.basename(filePath)}\n\n![${path.basename(filePath)}]\n\n## Image Content (Base64)\n\n\`\`\`\ndata:${mime.lookup(filePath) || 'application/octet-stream'};base64,${truncatedBase64}\n\`\`\`\n\n*Note: VLM description failed: ${error instanceof Error ? error.message : String(error)}*`,
+              returnDisplay: `Read image (VLM failed): ${relativePathForDisplay}`,
+            };
+          }
+        } else {
+          // No VLM service available, return image data for Gemini API
+          const base64Data = contentBuffer.toString('base64');
+          return {
+            llmContent: {
+              inlineData: {
+                data: base64Data,
+                mimeType: mime.lookup(filePath) || 'application/octet-stream',
+              },
+            },
+            returnDisplay: `Read image file: ${relativePathForDisplay}`,
+          };
+        }
+      }
       case 'pdf':
       case 'audio':
       case 'video': {

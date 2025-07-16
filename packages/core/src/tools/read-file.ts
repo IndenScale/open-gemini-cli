@@ -50,7 +50,7 @@ export class ReadFileTool extends BaseTool<ReadFileToolParams, ToolResult> {
     super(
       ReadFileTool.Name,
       'ReadFile',
-      'Reads and returns the content of a specified file from the local filesystem. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files. For text files, it can read specific line ranges.',
+      'Reads and returns the content of a specified file from the local filesystem. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), PDF files, and Office files (Word, Excel, PowerPoint). Office files are parsed into readable text format. For text files, it can read specific line ranges.',
       {
         properties: {
           absolute_path: {
@@ -135,6 +135,7 @@ export class ReadFileTool extends BaseTool<ReadFileToolParams, ToolResult> {
       this.config.getTargetDir(),
       params.offset,
       params.limit,
+      this.config.getFileParserService(),
     );
 
     if (result.error) {

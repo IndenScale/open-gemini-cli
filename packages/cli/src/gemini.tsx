@@ -245,7 +245,7 @@ export async function main() {
     argv,
   );
 
-  await runNonInteractive(nonInteractiveConfig, input, prompt_id);
+  await runNonInteractive(nonInteractiveConfig, input, prompt_id, argv);
   process.exit(0);
 }
 

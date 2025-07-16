@@ -31,6 +31,8 @@ import { WebSearchTool } from '../tools/web-search.js';
 import { GeminiClient } from '../core/client.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { GitService } from '../services/gitService.js';
+import { FileParserService } from '../services/fileParserService.js';
+import { CompositeVLMService } from '../services/vlmService.js';
 import { loadServerHierarchicalMemory } from '../utils/memoryDiscovery.js';
 import { getProjectTempDir } from '../utils/paths.js';
 import {
@@ -177,6 +179,7 @@ export class Config {
   };
   private fileDiscoveryService: FileDiscoveryService | null = null;
   private gitService: GitService | undefined = undefined;
+  private fileParserService: FileParserService | null = null;
   private readonly checkpointing: boolean;
   private readonly proxy: string | undefined;
   private readonly cwd: string;
@@ -349,6 +352,15 @@ export class Config {
 
   getToolRegistry(): Promise<ToolRegistry> {
     return Promise.resolve(this.toolRegistry);
+  }
+
+  getFileParserService(): FileParserService {
+    if (!this.fileParserService) {
+      // Initialize VLM service with proper fallback
+      const vlmService = new CompositeVLMService(this.geminiClient?.getContentGenerator());
+      this.fileParserService = new FileParserService(vlmService);
+    }
+    return this.fileParserService;
   }
 
   getDebugMode(): boolean {

@@ -41,6 +41,9 @@ import {
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
+import { FileParserService, VLMService } from '../services/fileParserService.js';
+import { CompositeVLMService } from '../services/vlmService.js';
+import * as path from 'path';
 
 function isThinkingSupported(model: string) {
   if (model.startsWith('gemini-2.5')) return true;
@@ -102,6 +105,8 @@ export class GeminiClient {
   private readonly COMPRESSION_PRESERVE_THRESHOLD = 0.3;
 
   private readonly loopDetector: LoopDetectionService;
+  private fileParserService: FileParserService;
+  private vlmService?: VLMService;
   private lastPromptId?: string;
 
   constructor(private config: Config) {
@@ -111,6 +116,9 @@ export class GeminiClient {
 
     this.embeddingModel = config.getEmbeddingModel();
     this.loopDetector = new LoopDetectionService(config);
+    
+    // Initialize file parser service without VLM (will be set later)
+    this.fileParserService = new FileParserService();
   }
 
   async initialize(contentGeneratorConfig: ContentGeneratorConfig) {
@@ -119,6 +127,11 @@ export class GeminiClient {
       this.config,
       this.config.getSessionId(),
     );
+    
+    // Now initialize VLM service with the content generator
+    this.vlmService = new CompositeVLMService(this.contentGenerator);
+    this.fileParserService = new FileParserService(this.vlmService);
+    
     this.chat = await this.startChat();
   }
 
@@ -270,6 +283,44 @@ export class GeminiClient {
     }
   }
 
+  private async parseFilesFromContent(
+    contents: Content[],
+  ): Promise<Content[]> {
+    const newContents: Content[] = [];
+    for (const content of contents) {
+      const newParts: Part[] = [];
+      if (content.parts) {
+        for (const part of content.parts) {
+          if (
+            'functionCall' in part &&
+            part.functionCall &&
+            part.functionCall.name === 'file_parser' &&
+            part.functionCall.args &&
+            typeof part.functionCall.args.path === 'string'
+          ) {
+            try {
+              const filePath = part.functionCall.args.path;
+              const markdown =
+                await this.fileParserService.parseFileToMarkdown(filePath);
+              const fileName = path.basename(filePath);
+              newParts.push({
+                text: `## Content from file: ${fileName}\n\n${markdown}`,
+              });
+            } catch (e) {
+              newParts.push({
+                text: `Error parsing file: ${getErrorMessage(e)}`,
+              });
+            }
+          } else {
+            newParts.push(part);
+          }
+        }
+      }
+      newContents.push({ ...content, parts: newParts });
+    }
+    return newContents;
+  }
+
   async *sendMessageStream(
     request: PartListUnion,
     signal: AbortSignal,
@@ -303,8 +354,16 @@ export class GeminiClient {
     if (compressed) {
       yield { type: GeminiEventType.ChatCompressed, value: compressed };
     }
+
+    // Pre-process files before sending the message
+    const requestParts = Array.isArray(request) ? request : [request];
+    const processedRequest = await this.parseFilesFromContent([
+      { role: 'user', parts: requestParts.map(part => typeof part === 'string' ? { text: part } : part) },
+    ]);
+    const finalRequest = processedRequest[0].parts;
+
     const turn = new Turn(this.getChat(), prompt_id);
-    const resultStream = turn.run(request, signal);
+    const resultStream = turn.run(finalRequest || [], signal);
     for await (const event of resultStream) {
       if (this.loopDetector.addAndCheck(event)) {
         yield { type: GeminiEventType.LoopDetected };
@@ -361,6 +420,8 @@ export class GeminiClient {
         ...config,
       };
 
+      const processedContents = await this.parseFilesFromContent(contents);
+
       const apiCall = () =>
         this.getContentGenerator().generateContent({
           model: modelToUse,
@@ -370,7 +431,7 @@ export class GeminiClient {
             responseSchema: schema,
             responseMimeType: 'application/json',
           },
-          contents,
+          contents: processedContents,
         });
 
       const result = await retryWithBackoff(apiCall, {
@@ -455,11 +516,13 @@ export class GeminiClient {
         systemInstruction,
       };
 
+      const processedContents = await this.parseFilesFromContent(contents);
+
       const apiCall = () =>
         this.getContentGenerator().generateContent({
           model: modelToUse,
           config: requestConfig,
-          contents,
+          contents: processedContents,
         });
 
       const result = await retryWithBackoff(apiCall, {

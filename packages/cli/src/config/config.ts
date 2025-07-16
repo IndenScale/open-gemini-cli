@@ -44,6 +44,7 @@ export interface CliArgs {
   debug: boolean | undefined;
   prompt: string | undefined;
   promptInteractive: string | undefined;
+  file: string[] | undefined;
   allFiles: boolean | undefined;
   all_files: boolean | undefined;
   showMemoryUsage: boolean | undefined;
@@ -77,6 +78,11 @@ export async function parseArguments(): Promise<CliArgs> {
       alias: 'p',
       type: 'string',
       description: 'Prompt. Appended to input on stdin (if any).',
+    })
+    .option('file', {
+      type: 'string',
+      array: true,
+      description: 'Path to a file to include in the prompt context. Can be used multiple times.',
     })
     .option('prompt-interactive', {
       alias: 'i',

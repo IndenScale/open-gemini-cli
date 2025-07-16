@@ -20,6 +20,8 @@ import {
 } from '@google/genai';
 
 import { parseAndFormatApiError } from './ui/utils/errorParsing.js';
+import { CliArgs } from './config/config.js';
+import * as path from 'path';
 
 function getResponseText(response: GenerateContentResponse): string | null {
   if (response.candidates && response.candidates.length > 0) {
@@ -47,6 +49,7 @@ export async function runNonInteractive(
   config: Config,
   input: string,
   prompt_id: string,
+  argv: CliArgs,
 ): Promise<void> {
   await config.initialize();
   // Handle EPIPE errors when the output is piped to a command that closes early.
@@ -62,7 +65,28 @@ export async function runNonInteractive(
 
   const chat = await geminiClient.getChat();
   const abortController = new AbortController();
-  let currentMessages: Content[] = [{ role: 'user', parts: [{ text: input }] }];
+
+  // Build the initial parts array, including files if provided.
+  const initialParts: Part[] = [];
+  if (argv.file && argv.file.length > 0) {
+    for (const filePath of argv.file) {
+      initialParts.push({
+        functionCall: {
+          name: 'file_parser',
+          args: {
+            // Ensure we use an absolute path for the file parser service
+            path: path.resolve(filePath),
+          },
+        },
+      });
+    }
+  }
+  // Add the user's text prompt to the parts array.
+  if (input) {
+    initialParts.push({ text: input });
+  }
+
+  let currentMessages: Content[] = [{ role: 'user', parts: initialParts }];
   let turnCount = 0;
   try {
     while (true) {
