@@ -1,6 +1,6 @@
 {
   "name": "@indenscale/open-gemini-cli-core",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Gemini CLI Core",
   "repository": {
     "type": "git",
@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit"
   },
   "files": [
-    "dist"
+    "dist",
+    "test/data"
   ],
   "dependencies": {
     "@google/genai": "1.8.0",

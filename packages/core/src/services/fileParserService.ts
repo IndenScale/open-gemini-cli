@@ -7,7 +7,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import mammoth from 'mammoth';
-import pdf from 'pdf-parse';
+
+// pdf-parse will be dynamically imported to avoid debug mode issues
+
 import * as xlsx from 'xlsx';
 
 // Constants for file size limits (in bytes)
@@ -29,7 +31,7 @@ export interface VLMService {
  */
 export class FileParserService {
   private vlmService?: VLMService;
-  
+
   constructor(vlmService?: VLMService) {
     this.vlmService = vlmService;
   }
@@ -45,7 +47,7 @@ export class FileParserService {
   public async parseFileToMarkdown(filePath: string): Promise<string> {
     const extension = path.extname(filePath).toLowerCase();
     const stats = await fs.stat(filePath);
-    
+
     // Check file size limits
     const maxSize = extension === '.pdf' ? MAX_PDF_SIZE : MAX_FILE_SIZE;
     if (stats.size > maxSize) {
@@ -53,7 +55,7 @@ export class FileParserService {
       const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
       throw new Error(`File is too large: ${sizeMB}MB (max: ${maxSizeMB}MB)`);
     }
-    
+
     const fileBuffer = await fs.readFile(filePath);
     const fileName = path.basename(filePath);
 
@@ -91,7 +93,7 @@ export class FileParserService {
       default:
         throw new Error(`Unsupported file type: ${extension}`);
     }
-    
+
     return content;
   }
 
@@ -105,18 +107,18 @@ export class FileParserService {
     try {
       // Extract HTML with images using mammoth
       const result = await mammoth.convertToHtml({ buffer });
-      
+
       if (result.messages.length > 0) {
         console.warn(`Warnings while parsing ${fileName}:`, result.messages);
       }
-      
+
       let htmlContent = result.value;
-      
+
       // Process images with VLM if available
       if (this.vlmService) {
         const imageRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
         const imageMatches = [...htmlContent.matchAll(imageRegex)];
-        
+
         for (const match of imageMatches) {
           const [fullMatch, src] = match;
           if (src.startsWith('data:image/')) {
@@ -125,9 +127,9 @@ export class FileParserService {
               const [mimeTypePart, base64Data] = src.split(',');
               const mimeType = mimeTypePart.match(/data:([^;]+)/)?.[1] || 'image/png';
               const imageBuffer = Buffer.from(base64Data, 'base64');
-              
+
               console.log(`[DocX VLM Debug] Processing embedded image: ${mimeType}, size: ${imageBuffer.length} bytes`);
-              
+
               // Check image size limit (20MB)
               const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
               if (imageBuffer.length > MAX_IMAGE_SIZE) {
@@ -135,7 +137,7 @@ export class FileParserService {
                 htmlContent = htmlContent.replace(fullMatch, `<p>[Image too large: ${(imageBuffer.length / (1024 * 1024)).toFixed(2)}MB]</p>`);
                 continue;
               }
-              
+
               const description = await this.vlmService.describeImage(imageBuffer, mimeType);
               console.log(`[DocX VLM Debug] Image description generated: ${description.substring(0, 100)}...`);
               htmlContent = htmlContent.replace(fullMatch, `<p>[Image: ${description}]</p>`);
@@ -152,7 +154,7 @@ export class FileParserService {
         // No VLM service available, replace all images with placeholders
         htmlContent = htmlContent.replace(/<img[^>]*>/g, '<p>[Image: VLM service not configured]</p>');
       }
-      
+
       // Convert HTML to Markdown
       const markdown = htmlContent
         .replace(/<h1[^>]*>/g, '# ')
@@ -178,7 +180,7 @@ export class FileParserService {
         .replace(/<[^>]*>/g, '') // Remove remaining HTML tags
         .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
         .trim();
-      
+
       return `# ${fileName}\n\n${markdown}`;
     } catch (error) {
       console.error(`Error parsing DOCX file ${fileName}:`, error);
@@ -196,16 +198,18 @@ export class FileParserService {
    */
   private async parsePdf(buffer: Buffer, fileName: string): Promise<string> {
     try {
+      // Dynamic import to avoid debug mode execution issues with pdf-parse
+      const pdf = (await import('pdf-parse')).default;
       const data = await pdf(buffer);
       let text = data.text;
-      
+
       // Basic formatting improvements
       text = text
         .replace(/\r\n/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .replace(/([.!?])\s*\n([A-Z])/g, '$1\n\n$2') // Add paragraph breaks after sentences
         .trim();
-      
+
       const pageInfo = data.numpages > 1 ? ` (${data.numpages} pages)` : '';
       return `# ${fileName}${pageInfo}\n\n${text}`;
     } catch (error) {
@@ -225,7 +229,7 @@ export class FileParserService {
     try {
       const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true });
       let markdown = `# ${fileName}\n\n`;
-      
+
       // Process each sheet
       for (const sheetName of workbook.SheetNames) {
         const worksheet = workbook.Sheets[sheetName];
@@ -244,7 +248,7 @@ export class FileParserService {
 
         // Check if data looks like a table (has consistent columns)
         const firstRowLength = (jsonData[0] as any[]).length;
-        const isTable = jsonData.slice(0, 5).every((row: any[]) => 
+        const isTable = jsonData.slice(0, 5).every((row: any[]) =>
           Array.isArray(row) && row.length === firstRowLength
         );
 
@@ -252,11 +256,11 @@ export class FileParserService {
           // Format as table
           const header = (jsonData[0] as any[]).map(cell => String(cell || ''));
           const rows = jsonData.slice(1) as any[][];
-          
+
           // Create markdown table
           markdown += `| ${header.join(' | ')} |\n`;
           markdown += `| ${header.map(() => '---').join(' | ')} |\n`;
-          
+
           rows.forEach((row) => {
             const formattedRow = row.map(cell => {
               if (cell === null || cell === undefined) return '';
@@ -279,10 +283,10 @@ export class FileParserService {
             }
           });
         }
-        
+
         markdown += '\n';
       }
-      
+
       return markdown.trim();
     } catch (error) {
       console.error('Excel parsing error:', error);
@@ -302,7 +306,7 @@ export class FileParserService {
       // In a full implementation, you'd use a specialized library like python-pptx
       const workbook = xlsx.read(buffer, { type: 'buffer' });
       let markdown = `# ${fileName}\n\n`;
-      
+
       if (workbook.SheetNames.length > 0) {
         // Try to extract any readable text
         for (const sheetName of workbook.SheetNames) {
@@ -313,12 +317,12 @@ export class FileParserService {
           }
         }
       }
-      
+
       // If no content extracted, provide a message
       if (markdown === `# ${fileName}\n\n`) {
         markdown += '*Note: PowerPoint file parsing is limited. For best results, export to PDF or use a specialized PowerPoint parsing service.*\n';
       }
-      
+
       return markdown.trim();
     } catch (error) {
       // Fallback message
@@ -335,7 +339,7 @@ export class FileParserService {
   private async parseTextFile(buffer: Buffer, fileName: string): Promise<string> {
     const text = buffer.toString('utf-8');
     const extension = path.extname(fileName).toLowerCase();
-    
+
     if (extension === '.csv') {
       // Parse CSV as table
       try {
@@ -345,19 +349,19 @@ export class FileParserService {
           let markdown = `# ${fileName}\n\n`;
           markdown += `| ${headers.join(' | ')} |\n`;
           markdown += `| ${headers.map(() => '---').join(' | ')} |\n`;
-          
+
           for (let i = 1; i < lines.length; i++) {
             const cells = lines[i].split(',').map(c => c.trim());
             markdown += `| ${cells.join(' | ')} |\n`;
           }
-          
+
           return markdown;
         }
       } catch (error) {
         // If CSV parsing fails, return as plain text
       }
     }
-    
+
     return `# ${fileName}\n\n${text}`;
   }
 
@@ -376,7 +380,7 @@ export class FileParserService {
     const fileName = path.basename(filePath);
     const extension = path.extname(filePath).substring(1);
     const mimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
-    
+
     if (this.vlmService) {
       try {
         const description = await this.vlmService.describeImage(buffer, mimeType);
@@ -385,16 +389,16 @@ export class FileParserService {
         console.warn(`VLM parsing failed for ${filePath}:`, error);
       }
     }
-    
+
     // Fallback: Include limited base64 image for display
     const base64Image = buffer.toString('base64');
-    
+
     // Limit base64 output length to prevent overwhelming output
     const MAX_BASE64_DISPLAY_LENGTH = 200; // Show only first 200 characters
-    const displayBase64 = base64Image.length > MAX_BASE64_DISPLAY_LENGTH 
+    const displayBase64 = base64Image.length > MAX_BASE64_DISPLAY_LENGTH
       ? `${base64Image.substring(0, MAX_BASE64_DISPLAY_LENGTH)}... (${base64Image.length - MAX_BASE64_DISPLAY_LENGTH} more characters)`
       : base64Image;
-    
+
     return `# ${fileName}\n\n![${fileName}](data:${mimeType};base64,${displayBase64})\n\n*[Image description not available - VLM service not configured]*`;
   }
 }

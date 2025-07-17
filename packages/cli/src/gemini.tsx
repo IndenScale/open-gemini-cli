@@ -198,6 +198,7 @@ export async function main() {
   const shouldBeInteractive =
     !!argv.promptInteractive || (process.stdin.isTTY && input?.length === 0);
 
+
   // Render UI, passing necessary config values. Check that there is no command line question.
   if (shouldBeInteractive) {
     const version = await getCliVersion();
