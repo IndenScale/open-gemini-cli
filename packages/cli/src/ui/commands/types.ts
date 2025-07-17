@@ -10,6 +10,7 @@ import { LoadedSettings } from '../../config/settings.js';
 import { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
 import type { HistoryItem } from '../types.js';
 import { SessionStatsState } from '../contexts/SessionContext.js';
+import { Content } from '@google/genai';
 
 // Grouped dependencies for clarity and easier mocking
 export interface CommandContext {

@@ -1,6 +1,6 @@
 {
   "name": "@indenscale/open-gemini-cli",
-  "version": "0.1.3",
+  "version": "0.1.10",
   "engines": {
     "node": ">=20.0.0"
   },

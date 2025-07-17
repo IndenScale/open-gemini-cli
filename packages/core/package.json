@@ -1,6 +1,6 @@
 {
   "name": "@indenscale/open-gemini-cli-core",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Gemini CLI Core",
   "repository": {
     "type": "git",
