@@ -2,7 +2,7 @@
   "name": "@indenscale/open-gemini-cli",
   "version": "0.1.3",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.0.0"
   },
   "type": "module",
   "workspaces": [
@@ -86,8 +86,5 @@
     "typescript-eslint": "^8.30.1",
     "vitest": "^3.2.4",
     "yargs": "^18.0.0"
-  },
-  "dependencies": {
-    "@indenscale/open-gemini-cli": "^0.1.3"
   }
 }
