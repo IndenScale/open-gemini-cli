@@ -433,14 +433,38 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
         if (timerRef.current) {
           clearTimeout(timerRef.current);
         }
-        const quitCommand = slashCommands.find(
-          (cmd) => cmd.name === 'quit' || cmd.altName === 'exit',
-        );
-        if (quitCommand && quitCommand.action) {
-          quitCommand.action(commandContext, '');
-        } else {
-          // This is unlikely to be needed but added for an additional fallback.
-          process.exit(0);
+        
+        // Enhanced exit handling for better reliability
+        try {
+          const quitCommand = slashCommands.find(
+            (cmd) => cmd.name === 'quit' || cmd.altName === 'exit',
+          );
+          if (quitCommand && quitCommand.action) {
+            const result = quitCommand.action(commandContext, '');
+            if (result && 'type' in result && result.type === 'quit') {
+              // Set quitting messages and exit after a short delay
+              setQuittingMessages(result.messages);
+              setTimeout(() => {
+                process.exit(0);
+              }, 100);
+            } else {
+              // Fallback if quit command doesn't return expected result
+              process.exit(0);
+            }
+          } else {
+            // Enhanced fallback with cleanup
+            registerCleanup(() => {
+              // Ensure any auth-related resources are cleaned up
+              if (config && typeof config.cleanup === 'function') {
+                config.cleanup();
+              }
+            });
+            process.exit(0);
+          }
+        } catch (error) {
+          // Force exit if there's any issue with the quit command
+          console.error('Error during exit, forcing exit...', error);
+          process.exit(1);
         }
       } else {
         setPressedOnce(true);
@@ -451,10 +475,10 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
       }
     },
     // Add commandContext to the dependency array here!
-    [slashCommands, commandContext],
+    [slashCommands, commandContext, config],
   );
 
-  useInput((input: string, key: InkKeyType) => {
+  const handleUserInput = useCallback((input: string, key: InkKeyType) => {
     let enteringConstrainHeightMode = false;
     if (!constrainHeight) {
       // Automatically re-enter constrain height mode if the user types
@@ -478,6 +502,7 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
     } else if (key.ctrl && (input === 'c' || input === 'C')) {
       handleExit(ctrlCPressedOnce, setCtrlCPressedOnce, ctrlCTimerRef);
     } else if (key.ctrl && (input === 'd' || input === 'D')) {
+      // Check buffer text dynamically to avoid dependency on buffer.text.length
       if (buffer.text.length > 0) {
         // Do nothing if there is text in the input.
         return;
@@ -486,7 +511,18 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
     } else if (key.ctrl && input === 's' && !enteringConstrainHeightMode) {
       setConstrainHeight(false);
     }
-  });
+  }, [
+    constrainHeight,
+    showToolDescriptions,
+    config,
+    handleSlashCommand,
+    handleExit,
+    ctrlCPressedOnce,
+    ctrlDPressedOnce,
+    buffer, // Include buffer object but access text.length dynamically
+  ]);
+
+  useInput(handleUserInput);
 
   useEffect(() => {
     if (config) {
@@ -937,6 +973,8 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
                   commandContext={commandContext}
                   shellModeActive={shellModeActive}
                   setShellModeActive={setShellModeActive}
+                  onEmptyBufferCtrlC={() => handleExit(ctrlCPressedOnce, setCtrlCPressedOnce, ctrlCTimerRef)}
+                  onEmptyBufferCtrlD={() => handleExit(ctrlDPressedOnce, setCtrlDPressedOnce, ctrlDTimerRef)}
                 />
               )}
             </>

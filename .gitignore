@@ -5,6 +5,7 @@
 # gemini-cli settings
 .gemini/
 !gemini/config.yaml
+GEMINI.md
 
 # claude code
 .claude/
@@ -42,3 +43,6 @@ packages/*/coverage/
 packages/cli/src/generated/
 .integration-tests/
 packages/vscode-ide-companion/*.vsix
+
+# Installation
+open-gemini-cli-installation/

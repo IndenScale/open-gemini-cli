@@ -256,10 +256,10 @@ export class OpenAIContentGenerator implements ContentGenerator {
             const usage = chunk.usage || (chunk.choices?.[0] as any)?.usage;
             // --- 修改结束 ---
 
-            if (usage) {
-                finalUsage = usage as any;
-                console.log('[Usage Debug] Received usage info in chunk:', finalUsage);
-            }
+            // if (usage) {
+            //     finalUsage = usage as any;
+            //     console.log('[Usage Debug] Received usage info in chunk:', finalUsage);
+            // }
 
             // 对于包含usage信息的chunk，即使没有其他内容也要处理
             // 传递当前chunk的usage信息（如果有的话）

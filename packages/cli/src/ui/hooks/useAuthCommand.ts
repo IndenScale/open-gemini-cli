@@ -10,6 +10,7 @@ import {
   AuthType,
   Config,
   clearCachedCredentialFile,
+  clearAuthEnvironmentVariables,
   getErrorMessage,
 } from '@indenscale/open-gemini-cli-core';
 import { runExitCleanup } from '../../utils/cleanup.js';
@@ -54,7 +55,11 @@ export const useAuthCommand = (
   const handleAuthSelect = useCallback(
     async (authType: AuthType | undefined, scope: SettingScope) => {
       if (authType) {
+        // Clear cached credentials and conflicting environment variables
         await clearCachedCredentialFile();
+        // Only clear environment variables that would conflict with the target auth type
+        clearAuthEnvironmentVariables(authType);
+        
         settings.setValue(scope, 'selectedAuthType', authType);
         if (authType === AuthType.LOGIN_WITH_GOOGLE && config.getNoBrowser()) {
           runExitCleanup();

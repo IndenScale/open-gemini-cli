@@ -545,7 +545,7 @@ export class OpenAIToGeminiConverter {
                 candidatesTokenCount: finalUsage.completion_tokens,
                 totalTokenCount: finalUsage.total_tokens,
             };
-            console.log('[Usage Debug] Added usage metadata to response:', geminiResponse.usageMetadata);
+            // console.log('[Usage Debug] Added usage metadata to response:', geminiResponse.usageMetadata);
         }
 
         return geminiResponse;

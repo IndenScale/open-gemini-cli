@@ -534,10 +534,10 @@ export class GeminiChat {
         // 新增逻辑：直接捕获用量信息
         // 如果当前块包含用量信息，就立即保存下来
         // 这比在最后搜索数组更可靠
-        if (chunk.usageMetadata) {
-          finalUsageMetadata = chunk.usageMetadata;
-          console.log('[Usage Debug] Captured usage metadata directly:', finalUsageMetadata);
-        }
+        // if (chunk.usageMetadata) {
+        //   finalUsageMetadata = chunk.usageMetadata;
+        //   console.log('[Usage Debug] Captured usage metadata directly:', finalUsageMetadata);
+        // }
         if (isValidResponse(chunk)) {
           // 原始代码中的 `chunks.push(chunk);` 已被移到循环顶部，此处不再需要。
           const content = chunk.candidates?.[0]?.content;

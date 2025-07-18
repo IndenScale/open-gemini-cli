@@ -11,6 +11,7 @@ import {
   ContentGeneratorConfig,
   createContentGeneratorConfig,
 } from '../core/contentGenerator.js';
+import { clearAuthEnvironmentVariables } from '../code_assist/oauth2.js';
 import { UserTierId } from '../code_assist/types.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { LSTool } from '../tools/ls.js';
@@ -277,6 +278,14 @@ export class Config {
   }
 
   async refreshAuth(authMethod: AuthType) {
+    // Clear any existing content generator to prevent state leakage
+    if (this.geminiClient) {
+      (this as any).geminiClient = undefined;
+    }
+
+    // Reset model to default when switching auth methods
+    this.resetModelToDefault();
+
     this.contentGeneratorConfig = createContentGeneratorConfig(
       this,
       authMethod,
@@ -321,6 +330,19 @@ export class Config {
 
   setFlashFallbackHandler(handler: FlashFallbackHandler): void {
     this.flashFallbackHandler = handler;
+  }
+
+  cleanup(): void {
+    // Clean up resources and reset state to prevent hanging processes
+    // Note: Using type assertion to safely clear these properties during cleanup
+    // This is safe because cleanup is only called during app termination
+    (this as any).geminiClient = undefined;
+    (this as any).contentGeneratorConfig = undefined;
+    this.modelSwitchedDuringSession = false;
+    
+    // During cleanup (app termination), we can safely clear all auth env vars
+    // since the process is ending anyway
+    clearAuthEnvironmentVariables();
   }
 
   getMaxSessionTurns(): number {

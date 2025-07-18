@@ -40,6 +40,8 @@ export interface InputPromptProps {
   suggestionsWidth: number;
   shellModeActive: boolean;
   setShellModeActive: (value: boolean) => void;
+  onEmptyBufferCtrlC?: () => void;
+  onEmptyBufferCtrlD?: () => void;
 }
 
 export const InputPrompt: React.FC<InputPromptProps> = ({
@@ -56,6 +58,8 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   suggestionsWidth,
   shellModeActive,
   setShellModeActive,
+  onEmptyBufferCtrlC,
+  onEmptyBufferCtrlD,
 }) => {
   const [justNavigatedHistory, setJustNavigatedHistory] = useState(false);
   const completion = useCompletion(
@@ -366,6 +370,18 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
           resetCompletionState();
           return;
         }
+        // When buffer is empty, call the parent handler for exit handling
+        if (onEmptyBufferCtrlC) {
+          onEmptyBufferCtrlC();
+        }
+        return;
+      }
+
+      // Ctrl+D (EOF - exit if buffer is empty)
+      if (key.ctrl && key.name === 'd') {
+        if (buffer.text.length === 0 && onEmptyBufferCtrlD) {
+          onEmptyBufferCtrlD();
+        }
         return;
       }
 
@@ -408,6 +424,8 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
       shellHistory,
       handleClipboardImage,
       resetCompletionState,
+      onEmptyBufferCtrlC,
+      onEmptyBufferCtrlD,
     ],
   );
 

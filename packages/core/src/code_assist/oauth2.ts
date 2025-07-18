@@ -331,6 +331,26 @@ export async function clearCachedCredentialFile() {
   }
 }
 
+export function clearAuthEnvironmentVariables(targetAuthType?: AuthType) {
+  // Only clear environment variables that might conflict with the target auth type
+  // If no target type specified, clear potentially conflicting variables
+  
+  if (!targetAuthType || targetAuthType !== AuthType.OPENAI_COMPATIBLE) {
+    // Only clear OpenAI variables when not switching TO OpenAI
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_BASE_URL;
+    delete process.env.OPENAI_MODEL;
+  }
+  
+  if (!targetAuthType || 
+      (targetAuthType !== AuthType.USE_VERTEX_AI && targetAuthType !== AuthType.CLOUD_SHELL)) {
+    // Only clear Google Application Credentials when not switching to Vertex AI or Cloud Shell
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    }
+  }
+}
+
 async function fetchAndCacheUserInfo(client: OAuth2Client): Promise<void> {
   try {
     const { token } = await client.getAccessToken();
